@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>How Kyrgyz parliamentarians change their political parties.</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://unpkg.com/intersection-observer"></script>
+    <script src="https://unpkg.com/scrollama"></script>
+    <script src="stickyfill.min.js"></script>
+    <style>
+        body {
+            font-family: "Skolar Sans", Helvetica, sans-serif;
+        }
+
+        #scrolly {
+            position: relative;
+        }
+
+        article {
+            position: relative;
+            padding: 0 1rem;
+            margin: 0 auto;
+            width: 85%;
+            max-width: 30rem;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .step {
+            margin: 10rem auto 20rem auto;
+            color: #444;
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step:first-child {
+            margin-top: 0;
+        }
+
+        .step p {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+            background-color: #fff;
+            text-align: left;
+            border-radius: 5px;
+            -webkit-box-shadow: 0 3px 3px 1px rgba(0, 0, 0, .11);
+            box-shadow: 0 3px 3px 1px rgba(0, 0, 0, .11);
+            border: 1px solid #d0cccc;
+            line-height: 1.65;
+        }
+
+        figure {
+            position: -webkit-sticky;
+            position: sticky;
+            left: 0;
+            width: 100%;
+            margin: 0;
+            -webkit-transform: translate3d(0, 0, 0);
+            -moz-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+        }
+
+        .link {
+            color: #f4f4f4;
+        }
+
+        figure #chart {
+            text-align: center;
+            padding: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            -moz-transform: translate(-50%, -50%);
+            -webkit-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #000000;
+            z-index: 900;
+        }
+
+        .legend {
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+
+        .tooltip {
+            position: absolute;
+            z-index: 1000;
+            padding: 0.3rem;
+            pointer-events: none;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background-color: #fff;
+            text-align: left;
+            border-radius: 5px;
+            -webkit-box-shadow: 0 3px 3px 1px rgba(0, 0, 0, .11);
+            box-shadow: 0 3px 3px 1px rgba(0, 0, 0, .11);
+            border: 1px solid #d0cccc;
+            transform: translate(0, -65%);
+        }
+
+        .tooltip--text {
+            margin: 0;
+        }
+
+        .tooltip--name {
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .intro {
+            /* position: absolute; */
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            width: 100%;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        @supports not (-ms-ime-align: auto) {
+            .intro {
+                /* position: absolute; */
+                display: flex;
+                text-align: center;
+                flex-direction: column;
+                z-index: 1000;
+                width: 100%;
+                justify-content: space-evenly;
+                height: 100vh;
+            }
+        }
+
+        .intro__hed {
+            align-self: center;
+            justify-self: center;
+            margin: auto 1rem;
+            color: #444;
+        }
+
+        .intro__hed h1 {
+            font-weight: bold;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .intro__dek {
+            margin: auto;
+            max-width: 700px;
+        }
+
+        .intro__dek h1 {
+            align-self: center;
+            justify-self: center;
+            text-align: center;
+            padding: 1rem;
+            font-size: 1rem;
+            background-color: #EA6903;
+            color: #f4f4f4;
+            border-radius: 5px;
+            -webkit-box-shadow: 0 3px 3px 1px rgba(0, 0, 0, .11);
+            box-shadow: 0 3px 3px 1px rgba(0, 0, 0, .11);
+        }
+
+        .intro__dek p {
+            font-size: 0.8rem;
+            background-color: #5B6770;
+            max-width: 10rem;
+            margin: -1rem auto 0 auto;
+            padding: 0.5rem;
+            color: #f4f4f4;
+            border-radius: 5px;
+            -webkit-box-shadow: 0 3px 3px 1px rgba(0, 0, 0, .11);
+            box-shadow: 0 3px 3px 1px rgba(0, 0, 0, .11);
+        }
+
+        .logo {
+            align-self: center;
+            justify-self: center;
+            margin: auto;
+        }
+
+        .down {
+            transform: rotate(45deg);
+            -webkit-transform: rotate(45deg);
+        }
+        .disclaimer {
+            color:#444;
+        }
+
+        .arrows span {
+            display: block;
+            margin: auto;
+            width: 1rem;
+            height: 1rem;
+            border-bottom: 0.2rem solid #5B6770;
+            border-right: 0.2rem solid #5B6770;
+            transform: rotate(225deg);
+            animation: animate 3s infinite;
+        }
+
+        .arrows span:nth-child(1) {
+            animation-delay: -0.2s;
+        }
+
+        .depselected {
+            stroke-width: 3;
+        }
+
+        .highlighted {
+            background-color: #EA6903;
+            color: #f4f4f4;
+            border-radius: .25rem;
+            padding: .125rem .25rem;
+            white-space: nowrap;
+        }
+
+        .highlighted-gray {
+            background-color: #cdcfd1;
+            color: #000000;
+        }
+
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .underlined {
+            text-decoration-line: underline;
+            animation: lineanim 8s infinite;
+        }
+
+        .rect {
+            height: 0.9rem;
+            width: 0.9rem;
+            vertical-align: middle;
+            display: inline-block;
+        }
+
+        .rect-animation {
+            animation: rectanim 8s infinite;
+        }
+
+        @keyframes lineanim {
+            0% {
+                -webkit-text-decoration-color: #BDC2C6;
+                /* Safari */
+                text-decoration-color: #BDC2C6;
+            }
+
+            10% {
+                -webkit-text-decoration-color: #00965E;
+                ;
+                /* Safari */
+                text-decoration-color: #00965E;
+            }
+
+            20% {
+                -webkit-text-decoration-color: #007DBA;
+                /* Safari */
+                text-decoration-color: #007DBA;
+            }
+
+            30% {
+                -webkit-text-decoration-color: #A4D65E;
+                /* Safari */
+                text-decoration-color: #A4D65E;
+            }
+
+            40% {
+                -webkit-text-decoration-color: #FFC72C;
+                /* Safari */
+                text-decoration-color: #FFC72C;
+            }
+
+            50% {
+                -webkit-text-decoration-color: #EA6903;
+                /* Safari */
+                text-decoration-color: #EA6903;
+            }
+
+            60% {
+                -webkit-text-decoration-color: #665012;
+                /* Safari */
+                text-decoration-color: #665012;
+            }
+
+            70% {
+                -webkit-text-decoration-color: #D12430;
+                /* Safari */
+                text-decoration-color: #D12430;
+            }
+
+            80% {
+                -webkit-text-decoration-color: #8C4799;
+                /* Safari */
+                text-decoration-color: #8C4799;
+            }
+
+            90% {
+                -webkit-text-decoration-color: #2F1501;
+                /* Safari */
+                text-decoration-color: #2F1501;
+            }
+
+            100% {
+                -webkit-text-decoration-color: #BDC2C6;
+                /* Safari */
+                text-decoration-color: #BDC2C6;
+            }
+        }
+
+        @keyframes rectanim {
+            0% {
+                background-color: #BDC2C6;
+            }
+
+            10% {
+                background-color: #00965E;
+            }
+
+            20% {
+                background-color: #007DBA;
+            }
+
+            30% {
+                background-color: #A4D65E;
+            }
+
+            40% {
+                background-color: #FFC72C;
+            }
+
+            50% {
+                background-color: #EA6903;
+            }
+
+            60% {
+                background-color: #665012;
+            }
+
+            70% {
+                background-color: #D12430;
+            }
+
+            80% {
+                background-color: #8C4799;
+            }
+
+            90% {
+                background-color: #2F1501;
+            }
+
+            100% {
+                background-color: #BDC2C6;
+            }
+        }
+
+        input[type='text'],
+        input[type='number'],
+        textarea {
+            font-size: 16px;
+        }
+
+        ::-webkit-input-placeholder {
+            /* Chrome/Opera/Safari */
+            font-size: 0.8rem;
+        }
+
+        ::-moz-placeholder {
+            /* Firefox 19+ */
+            font-size: 0.8rem;
+        }
+
+        :-ms-input-placeholder {
+            /* IE 10+ */
+            font-size: 0.8rem;
+        }
+
+        :-moz-placeholder {
+            /* Firefox 18- */
+            font-size: 0.8rem;
+        }
+
+        @keyframes animate {
+            0% {
+                opacity: 0;
+                transform: rotate(225deg) translate(-30px, -30px);
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                transform: rotate(225deg) translate(0px, 0px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+
+        <section id="scrolly">
+            <figure>
+                <div id="intro" class="intro">
+                    <a class="logo" href="https://rus.azattyk.org/a/30807488.html">
+                        <img src="https://raw.githubusercontent.com/Rolikasi/copypast_laws/master/Kyrgyz-RU_RGB_compact-brandmark.png"
+                            height='63px' width='113px'>
+                    </a>
+                    <div class="intro__hed">
+                        <h1>How Kyrgyz parliamentarians change their political parties.</h1>
+                        <p><a class="disclaimer" target="_blank" href="https://rus.azattyk.org/a/30807488.html">Original article is published on Azattyk.</a></p>
+                    </div>
+                    <div class="intro__dek">
+                        <h1>Members of Kyrgyzstan’s parliament often choose their political party by how well its agenda
+                            aligns with their personal goals rather than their political values. This results in
+                            representatives frequently moving to parties that better suit their private interests.
+                        </h1>
+                        <p class="nowrap">By <a class="link" target="_blank" href="https://rolikasi.github.io">Edil
+                                Baiyzbekov</a></p>
+                        <div class="arrows">
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+                <div id='chart'></div>
+            </figure>
+            <article>
+                <div class="step" data-step="1">
+                    <p>Each square represents an individual <span class="nowrap"><span
+                                class="rect rect-animation"></span>
+                            deputy</span> , the lines show their transitions from convocation to convocation.
+                        The color indicates the party. You can find a specific deputy in the search at the very end of
+                        the infographic.
+                    </p>
+                </div>
+                <div class="step" data-step="2">
+                    <p><span class='highlighted highlighted-gray'>Note:</span> III convocation of
+                        parliament was elected by the majority system, not by party lists. Many candidates ran independently,
+                        but some were nominated by parties. Therefore, we showed their involvement in the parties. </p>
+                </div>
+
+                <div class="step" data-step="3">
+                    <p>«One-call aliases». 75% deputies were elected to parliament only <span class="highlighted">once</span>.</p>
+                </div>
+                <div class="step" data-step="4">
+                    <p>«Defectors». Every third deputy who was re-elected <span class="highlighted">changed the party</span>.</p>
+                </div>
+                <div class="step" data-step="5">
+                    <p>«Devotees». Only 15 deputies returned to parliament as part of the same party.</p>
+                </div>
+                <div class="step" data-step="6">
+                    <p>Every third deputy of those who were re-elected, <span class="highlighted">missed</span> 
+                        one or more convocations. Almazbek Atambaev, Anvar Artykov and Zakir Sharapov took the biggest breaks.</p>
+                </div>
+                <div class="step" data-step="7">
+                    <p>There were <span class="highlighted">no women</span> in the parliament of the third convocation. And in the entire history of the Parliament, it has never reached a 30% gender quota.</p>
+                </div>
+                <div class="step" data-step="8">
+                    <p>8% of deputies elected at least <span class="highlighted">three times</span>.
+                    </p>
+                </div>
+                <div class="step" data-step="9">
+                    <p><span class="highlighted">None of the deputies</span> worked in all convocations. Most often Omurbek Tekebaev and Isa Omurkulov were elected to parliament - 5 times each. 
+                    </p>
+                </div>
+                <div class="step step--last" data-step="10">
+                    <p>You can click on the party's name on the right to see the deputies that were in it. You can also search for parliamentarians by name under the graph. </p>
+
+                </div>
+            </article>
+        </section>
+        <section id="outro">
+        </section>
+    </main>
+    <script src="chart.js" async defer></script>
+    <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+
+
+</body>
+
+</html>
